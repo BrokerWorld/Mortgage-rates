@@ -166,8 +166,9 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#0f172a;color:#e2
 
 <script>
 const SHEET_ID    = "1Ywr8a7waQP7fLQIC9hbiHthIY_IVSGPZp_v1c-Yba10";
-const CSV_URL     = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/export?format=csv&gid=0";
+const CSV_URL       = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/export?format=csv&gid=0";
 const CSV_URL_PROMO = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/export?format=csv&gid=1193463627";
+const CSV_URL_NBC   = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/export?format=csv&gid=2014516855";
 
 const GROUPS = {
   "ATB":"regional","Desjardins":"regional","DUCA":"regional","Tru Cooperative Bank":"regional",
@@ -208,12 +209,13 @@ let tickerLenders = new Set();
 async function loadData() {
   setStatus("loading","Loading live rates...");
   try {
-    const [res1, res2] = await Promise.all([fetch(CSV_URL), fetch(CSV_URL_PROMO)]);
+    const [res1, res2, res3] = await Promise.all([fetch(CSV_URL), fetch(CSV_URL_PROMO), fetch(CSV_URL_NBC)]);
     if (!res1.ok) throw new Error("HTTP " + res1.status);
-    const [text1, text2] = await Promise.all([res1.text(), res2.text()]);
-    const main  = parseCSV(text1, false);
-    const promo = parseCSV(text2, true);
-    allData = [...main, ...promo];
+    const [text1, text2, text3] = await Promise.all([res1.text(), res2.text(), res3.text()]);
+    const main  = parseCSV(text1, false, false);
+    const promo = parseCSV(text2, true,  false);
+    const nbc   = parseCSV(text3, true,  true);
+    allData = [...main, ...promo, ...nbc];
     if (!allData.length) throw new Error("No lender data found");
     buildLenderPicker();
     setStatus("ok","Live — " + allData.length + " lenders — " + new Date().toLocaleTimeString());
@@ -224,7 +226,7 @@ async function loadData() {
   }
 }
 
-function parseCSV(text, isPromo) {
+function parseCSV(text, isPromo, isNBC) {
   const lines = text.trim().split("\n").map(l =>
     l.split(",").map(c => c.replace(/^"|"$/g,"").trim())
   );
