@@ -199,7 +199,7 @@ const RATE_CELLS = [
   {key:"3yr Fixed - Unins+Refi",   promoKey:"3yr Fixed - Uninsured", term:"3yr",type:"fixed",   ins:"refi",     label:"3yr Fixed — Uninsured",        cls:"refi"},
 ];
 
-const SKIP = ["lender","low feature","no frills","regional lender","national lender"];
+const SKIP = ["low feature / no frills","regional lenders"];
 
 let allData = [];
 let filters = {group:"all",type:"all",term:"all",ins:"all"};
@@ -212,9 +212,11 @@ async function loadData() {
     const [res1, res2, res3] = await Promise.all([fetch(CSV_URL), fetch(CSV_URL_PROMO), fetch(CSV_URL_NBC)]);
     if (!res1.ok) throw new Error("HTTP " + res1.status);
     const [text1, text2, text3] = await Promise.all([res1.text(), res2.text(), res3.text()]);
+    console.log("NBC raw first 200 chars:", text3.substring(0, 200));
+    console.log("Promo raw first 200 chars:", text2.substring(0, 200));
     const main  = parseCSV(text1, false, false);
     const promo = parseCSV(text2, true,  false);
-    const nbc   = parseCSV(text3, true,  true);
+    const nbc   = parseCSV(text3, false, true);
     allData = [...main, ...promo, ...nbc];
     if (!allData.length) throw new Error("No lender data found");
     buildLenderPicker();
@@ -226,10 +228,22 @@ async function loadData() {
   }
 }
 
+function parseCSVLine(line) {
+  const result = [];
+  let cur = "", inQuote = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { inQuote = !inQuote; }
+    else if (ch === ',' && !inQuote) { result.push(cur.trim()); cur = ""; }
+    else { cur += ch; }
+  }
+  result.push(cur.trim());
+  return result;
+}
+
 function parseCSV(text, isPromo, isNBC) {
-  const lines = text.trim().split("\n").map(l =>
-    l.split(",").map(c => c.replace(/^"|"$/g,"").trim())
-  );
+  console.log("parseCSV called with isPromo=" + isPromo + " isNBC=" + isNBC);
+  const lines = text.trim().split("\n").map(l => parseCSVLine(l));
   let hIdx = lines.findIndex(r => r.some(c => c === "Lender"));
   if (hIdx === -1) hIdx = 1;
   const h   = lines[hIdx];
@@ -258,7 +272,7 @@ function parseCSV(text, isPromo, isNBC) {
     rows.push(obj);
     if (isPromo) console.log("Promo row:", obj);
   }
-  console.log("parseCSV isPromo=" + isPromo + " hIdx=" + hIdx + " rows=" + rows.length);
+  console.log("parseCSV isPromo=" + isPromo + " isNBC=" + isNBC + " hIdx=" + hIdx + " rows=" + rows.length);
   return rows;
 }
 
