@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0f172a">
 <title>Mortgage Rates</title>
 <style>
@@ -16,7 +16,6 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#0f172a;color:#e2
 .badge-prime{background:#1e3a5f;color:#7dd3fc}
 .badge-bench{background:#1c3a2e;color:#6ee7b7}
 .badge-date{background:#1e1b2e;color:#a78bfa}
-
 .ticker-wrap{overflow:hidden;background:#080f1e;border-bottom:1px solid #1e293b;padding:8px 0}
 .ticker-track{display:flex;white-space:nowrap;animation:scroll 50s linear infinite}
 .ticker-track:hover{animation-play-state:paused}
@@ -25,7 +24,6 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#0f172a;color:#e2
 .ticker-rate{color:#7dd3fc;font-weight:700;font-size:13px}
 .ticker-label{color:#475569;font-size:11px}
 @keyframes scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-
 .filter-panel{background:#080f1e;border-bottom:1px solid #1e293b;padding:12px 16px;display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start}
 .filter-group{display:flex;flex-direction:column;gap:5px}
 .filter-label{font-size:10px;color:#475569;text-transform:uppercase;letter-spacing:.07em}
@@ -35,10 +33,8 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#0f172a;color:#e2
 .pill.active.var{background:#1c3a2e;border-color:#059669;color:#6ee7b7}
 .pill:hover:not(.active){border-color:#334155;color:#94a3b8}
 .sort-select{font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #1e293b;background:#0f172a;color:#94a3b8;cursor:pointer;outline:none}
-.sort-select:focus{border-color:#2563eb}
 .filter-divider{width:1px;background:#1e293b;align-self:stretch;margin:0 4px}
 .result-info{margin-left:auto;font-size:11px;color:#334155;align-self:center}
-
 .status-bar{padding:7px 16px;background:#080f1e;border-bottom:1px solid #1e293b;font-size:11px;display:flex;align-items:center;gap:8px}
 .dot{width:7px;height:7px;border-radius:50%;background:#334155;flex-shrink:0}
 .dot.ok{background:#6ee7b7}
@@ -46,7 +42,6 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#0f172a;color:#e2
 .dot.loading{background:#fbbf24;animation:pulse 1s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .status-text{color:#475569}
-
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1px;background:#1e293b}
 .lender-card{background:#0f172a;padding:16px}
 .lender-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
@@ -62,8 +57,6 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#0f172a;color:#e2
 .rate-cell.best{border:1px solid #451a03}
 .rate-cell.best .rate-val{color:#fbbf24}
 .section-divider{grid-column:1/-1;font-size:10px;color:#334155;text-transform:uppercase;letter-spacing:.08em;padding:6px 0 2px;border-top:1px solid #1e293b;margin-top:2px}
-.hidden-cell{display:none}
-
 .footer{padding:10px 16px;border-top:1px solid #1e293b;font-size:11px;color:#334155;display:flex;justify-content:space-between;align-items:center}
 .refresh-btn{font-size:11px;padding:4px 12px;border-radius:4px;border:1px solid #1e293b;background:transparent;color:#64748b;cursor:pointer}
 .refresh-btn:hover{border-color:#2563eb;color:#7dd3fc}
@@ -104,7 +97,7 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#0f172a;color:#e2
   <div class="filter-divider"></div>
   <div class="filter-group">
     <div class="filter-label">Rate type</div>
-    <div class="filter-row" id="fg-type">
+    <div class="filter-row">
       <button class="pill active" onclick="setFilter('type','all',this)">All</button>
       <button class="pill" onclick="setFilter('type','fixed',this)">Fixed</button>
       <button class="pill" onclick="setFilter('type','variable',this)">Variable</button>
@@ -113,16 +106,17 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#0f172a;color:#e2
   <div class="filter-divider"></div>
   <div class="filter-group">
     <div class="filter-label">Term</div>
-    <div class="filter-row" id="fg-term">
+    <div class="filter-row">
       <button class="pill active" onclick="setFilter('term','all',this)">All</button>
       <button class="pill" onclick="setFilter('term','3yr',this)">3yr</button>
+      <button class="pill" onclick="setFilter('term','4yr',this)">4yr</button>
       <button class="pill" onclick="setFilter('term','5yr',this)">5yr</button>
     </div>
   </div>
   <div class="filter-divider"></div>
   <div class="filter-group">
     <div class="filter-label">Insurance</div>
-    <div class="filter-row" id="fg-ins">
+    <div class="filter-row">
       <button class="pill active" onclick="setFilter('ins','all',this)">All</button>
       <button class="pill" onclick="setFilter('ins','insured',this)">Insured</button>
       <button class="pill" onclick="setFilter('ins','uninsured',this)">Uninsured</button>
@@ -132,7 +126,7 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#0f172a;color:#e2
   </div>
   <div class="filter-divider"></div>
   <div class="filter-group">
-    <div class="filter-label">Sort cards by</div>
+    <div class="filter-label">Sort by</div>
     <div class="filter-row">
       <select class="sort-select" id="sort-select" onchange="renderAll()">
         <option value="rate-asc">Lowest rate first</option>
@@ -142,19 +136,19 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#0f172a;color:#e2
       </select>
     </div>
   </div>
-  <span class="result-info" id="result-info"></span>
   <div class="filter-divider"></div>
   <div class="filter-group">
     <div class="filter-label">Ticker lenders</div>
     <div class="filter-row">
       <button class="pill active" onclick="setTickerMode('all',this)">All</button>
-      <button class="pill" onclick="setTickerMode('pick',this)" id="pick-btn">Pick lenders</button>
+      <button class="pill" onclick="setTickerMode('pick',this)">Pick lenders</button>
     </div>
     <div id="lender-picker" style="display:none;margin-top:6px;max-width:520px">
       <div id="lender-checkboxes" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px"></div>
       <button class="pill active" style="border-color:#2563eb" onclick="refreshTicker()">&#8635; Refresh ticker</button>
     </div>
   </div>
+  <span class="result-info" id="result-info"></span>
 </div>
 
 <div class="grid" id="grid"><div class="no-data">Loading...</div></div>
@@ -165,131 +159,216 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#0f172a;color:#e2
 </div>
 
 <script>
-const SHEET_ID    = "1Ywr8a7waQP7fLQIC9hbiHthIY_IVSGPZp_v1c-Yba10";
-const CSV_URL       = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/export?format=csv&gid=0";
-const CSV_URL_PROMO = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/export?format=csv&gid=1193463627";
-const CSV_URL_NBC   = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/export?format=csv&gid=2014516855";
+// ── Config ────────────────────────────────────────────────────────────────────
+var SHEET_ID     = "1Ywr8a7waQP7fLQIC9hbiHthIY_IVSGPZp_v1c-Yba10";
+var CSV_MAIN     = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/export?format=csv&gid=0";
+var CSV_PROMO    = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/export?format=csv&gid=1193463627";
+var CSV_NBC      = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/export?format=csv&gid=2014516855";
 
-const GROUPS = {
+var GROUPS = {
   "ATB":"regional","Desjardins":"regional","DUCA":"regional","Tru Cooperative Bank":"regional",
   "CMLS (Rate Advantage)":"nofrills","First Nat (Rate Option +)":"nofrills",
   "MCAP (Value-Flex)":"nofrills","RMG (Low Rate Basic)":"nofrills",
   "RFA (Promo)":"promo",
   "National Bank (Purchase Without Cashback or External Refinancing)":"promo",
-  "National Bank (Purchase With Cashback)":"promo",
+  "National Bank (Purchase With Cashback)":"promo"
 };
 
-// All rate cells with their filter metadata
-const RATE_CELLS = [
-  // 5yr Fixed
-  {key:"5yr Fixed - Insured",      promoKey:"5yr Fixed - Insured",   term:"5yr",type:"fixed",   ins:"insured",  label:"5yr Fixed — Insured",         cls:""},
-  {key:"5yr Fixed - Unins (25yr)", promoKey:"5yr Fixed - Uninsured", term:"5yr",type:"fixed",   ins:"uninsured",label:"5yr Fixed — Uninsured",        cls:""},
-  {key:"5yr Fixed - Refi (25yr)",  promoKey:"",                      term:"5yr",type:"fixed",   ins:"refi",     label:"5yr Fixed — Refi (25yr)",      cls:"refi"},
-  {key:"5yr Fixed - Rentals",      promoKey:"",                      term:"5yr",type:"fixed",   ins:"rentals",  label:"5yr Fixed — Rentals",          cls:"refi"},
-  // 5yr Variable
-  {key:"5yr Var - Insured",        promoKey:"5yr Var - Insured",     term:"5yr",type:"variable",ins:"insured",  label:"5yr Var — Insured",            cls:"var",  div:"5-Year Variable"},
-  {key:"5yr Var - Unins (25yr)",   promoKey:"5yr Var - Uninsured",   term:"5yr",type:"variable",ins:"uninsured",label:"5yr Var — Uninsured",          cls:"var"},
-  {key:"5yr Var - Refi (25yr)",    promoKey:"",                      term:"5yr",type:"variable",ins:"refi",     label:"5yr Var — Refi (25yr)",        cls:"var refi"},
-  // 4yr Fixed (BNC specific)
-  {key:"4yr Fixed - Insured",      promoKey:"4yr Fixed - Insured",   term:"4yr",type:"fixed",   ins:"insured",  label:"4yr Fixed — Insured",          cls:"",     div:"4-Year Fixed"},
-  {key:"4yr Fixed - Uninsured",    promoKey:"4yr Fixed - Uninsured", term:"4yr",type:"fixed",   ins:"uninsured",label:"4yr Fixed — Uninsured",        cls:""},
-  // 3yr Fixed
-  {key:"3yr Fixed - Insured",      promoKey:"3yr Fixed - Insured",   term:"3yr",type:"fixed",   ins:"insured",  label:"3yr Fixed — Insured",          cls:"",     div:"3-Year Fixed"},
-  {key:"3yr Fixed - Ins 80%",      promoKey:"",                      term:"3yr",type:"fixed",   ins:"insured",  label:"3yr Fixed — Ins 80%",          cls:""},
-  {key:"3yr Fixed - Unins+Refi",   promoKey:"3yr Fixed - Uninsured", term:"3yr",type:"fixed",   ins:"refi",     label:"3yr Fixed — Uninsured",        cls:"refi"},
+// Standard rate cells (main + promo sheets)
+var RATE_CELLS = [
+  {key:"5yr Fixed - Insured",      pkey:"5yr Fixed - Insured",   term:"5yr",type:"fixed",   ins:"insured",  label:"5yr Fixed — Insured",     cls:""},
+  {key:"5yr Fixed - Unins (25yr)", pkey:"5yr Fixed - Unins",     term:"5yr",type:"fixed",   ins:"uninsured",label:"5yr Fixed — Uninsured",   cls:""},
+  {key:"5yr Fixed - Refi (25yr)",  pkey:"",                      term:"5yr",type:"fixed",   ins:"refi",     label:"5yr Fixed — Refi (25yr)", cls:"refi"},
+  {key:"5yr Fixed - Rentals",      pkey:"5yr Fixed - Rentals",   term:"5yr",type:"fixed",   ins:"rentals",  label:"5yr Fixed — Rentals",     cls:"refi"},
+  {key:"5yr Var - Insured",        pkey:"5yr Var - Insured",     term:"5yr",type:"variable",ins:"insured",  label:"5yr Var — Insured",       cls:"var",  div:"5-Year Variable"},
+  {key:"5yr Var - Unins (25yr)",   pkey:"5yr Var - Unins",       term:"5yr",type:"variable",ins:"uninsured",label:"5yr Var — Uninsured",     cls:"var"},
+  {key:"5yr Var - Refi (25yr)",    pkey:"",                      term:"5yr",type:"variable",ins:"refi",     label:"5yr Var — Refi (25yr)",   cls:"var refi"},
+  {key:"3yr Fixed - Insured",      pkey:"3yr Fixed - Insured",   term:"3yr",type:"fixed",   ins:"insured",  label:"3yr Fixed — Insured",     cls:"",     div:"3-Year Fixed"},
+  {key:"3yr Fixed - Ins 80%",      pkey:"",                      term:"3yr",type:"fixed",   ins:"insured",  label:"3yr Fixed — Ins 80%",     cls:""},
+  {key:"3yr Fixed - Unins+Refi",   pkey:"3yr Fixed - Uninsured", term:"3yr",type:"fixed",   ins:"refi",     label:"3yr Fixed — Uninsured",   cls:"refi"}
 ];
 
-const SKIP = ["low feature / no frills","regional lenders"];
+// NBC-specific rate cells
+var NBC_CELLS = [
+  {key:"5yr Fixed - Insured",      col:"5yr Fixed - Insured",   term:"5yr",type:"fixed",   ins:"insured",  label:"5yr Fixed — Insured",   cls:""},
+  {key:"5yr Fixed - Unins (25yr)", col:"5yr Fixed - Uninsured", term:"5yr",type:"fixed",   ins:"uninsured",label:"5yr Fixed — Uninsured", cls:""},
+  {key:"5yr Var - Insured",        col:"5yr Var - Insured",     term:"5yr",type:"variable",ins:"insured",  label:"5yr Var — Insured",     cls:"var",  div:"5-Year Variable"},
+  {key:"5yr Var - Unins (25yr)",   col:"5yr Var - Uninsured",   term:"5yr",type:"variable",ins:"uninsured",label:"5yr Var — Uninsured",   cls:"var"},
+  {key:"4yr Fixed - Insured",      col:"4yr Fixed - Insured",   term:"4yr",type:"fixed",   ins:"insured",  label:"4yr Fixed — Insured",   cls:"",     div:"4-Year Fixed"},
+  {key:"4yr Fixed - Uninsured",    col:"4yr Fixed - Uninsured", term:"4yr",type:"fixed",   ins:"uninsured",label:"4yr Fixed — Uninsured", cls:""},
+  {key:"3yr Fixed - Insured",      col:"3yr Fixed - Insured",   term:"3yr",type:"fixed",   ins:"insured",  label:"3yr Fixed — Insured",   cls:"",     div:"3-Year Fixed"},
+  {key:"3yr Fixed - Unins+Refi",   col:"3yr Fixed - Uninsured", term:"3yr",type:"fixed",   ins:"refi",     label:"3yr Fixed — Uninsured", cls:"refi"}
+];
 
-let allData = [];
-let filters = {group:"all",type:"all",term:"all",ins:"all"};
-let tickerMode = "all";
-let tickerLenders = new Set();
+var TICKER_SKIP = ["First Nat (Rate Option +)","CMLS (Rate Advantage)","MCAP (Value-Flex)","RMG (Low Rate Basic)"];
+var allData     = [];
+var filters     = {group:"all",type:"all",term:"all",ins:"all"};
+var tickerMode  = "all";
+var tickerLenders = {};
 
-async function loadData() {
-  setStatus("loading","Loading live rates...");
-  try {
-    const [res1, res2, res3] = await Promise.all([fetch(CSV_URL), fetch(CSV_URL_PROMO), fetch(CSV_URL_NBC)]);
-    if (!res1.ok) throw new Error("HTTP " + res1.status);
-    const [text1, text2, text3] = await Promise.all([res1.text(), res2.text(), res3.text()]);
-    console.log("NBC raw first 200 chars:", text3.substring(0, 200));
-    console.log("Promo raw first 200 chars:", text2.substring(0, 200));
-    const main  = parseCSV(text1, false, false);
-    const promo = parseCSV(text2, true,  false);
-    const nbc   = parseCSV(text3, false, true);
-    allData = [...main, ...promo, ...nbc];
-    if (!allData.length) throw new Error("No lender data found");
-    buildLenderPicker();
-    setStatus("ok","Live — " + allData.length + " lenders — " + new Date().toLocaleTimeString());
-    renderAll();
-  } catch(e) {
-    setStatus("err","Error: " + e.message);
-    document.getElementById("grid").innerHTML = '<div class="no-data">Could not load data.<br>Make sure the sheet is published as CSV.</div>';
-  }
-}
-
-function parseCSVLine(line) {
-  const result = [];
-  let cur = "", inQuote = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (ch === '"') { inQuote = !inQuote; }
-    else if (ch === ',' && !inQuote) { result.push(cur.trim()); cur = ""; }
-    else { cur += ch; }
+// ── CSV parser ────────────────────────────────────────────────────────────────
+function parseLine(line) {
+  var result = [], cur = "", inQ = false;
+  for (var i = 0; i < line.length; i++) {
+    var c = line[i];
+    if (c === '"') { inQ = !inQ; }
+    else if (c === ',' && !inQ) { result.push(cur.trim()); cur = ""; }
+    else { cur += c; }
   }
   result.push(cur.trim());
   return result;
 }
 
-function parseCSV(text, isPromo, isNBC) {
-  console.log("parseCSV called with isPromo=" + isPromo + " isNBC=" + isNBC);
-  const lines = text.trim().split("\n").map(l => parseCSVLine(l));
-  let hIdx = lines.findIndex(r => r.some(c => c === "Lender"));
-  if (hIdx === -1) hIdx = 1;
-  const h   = lines[hIdx];
-  const col = name => h.findIndex(x => x === name);
+function colIdx(headers, name) {
+  for (var i = 0; i < headers.length; i++) {
+    if (headers[i] === name) return i;
+  }
+  return -1;
+}
 
-  const meta = (lines[0] || []).join(" ");
-  const pm = meta.match(/Prime Rate[:\s]+([\d.]+)/);
-  const bm = meta.match(/Benchmark[:\s]+([\d.]+)/);
-  const dm = meta.match(/Sheet date[:\s]+([\d/]+)/);
+function isRate(v) {
+  if (!v) return false;
+  if (!isNaN(parseFloat(v))) return true;
+  if (/^\d[\d.]*\s*\(P/.test(v)) return true;
+  return false;
+}
+
+function parseMainCSV(text) {
+  var lines = text.trim().split("\n").map(parseLine);
+  var hIdx  = 0;
+  for (var i = 0; i < lines.length; i++) {
+    if (lines[i].indexOf("Lender") >= 0) { hIdx = i; break; }
+  }
+  var h   = lines[hIdx];
+  var meta = lines.slice(0, hIdx).join(" ");
+  var pm  = meta.match(/Prime Rate[:\s]+([\d.]+)/);
+  var bm  = meta.match(/Benchmark[:\s]+([\d.]+)/);
+  var dm  = meta.match(/Sheet date[:\s]+([\d/]+)/);
   if (pm) document.getElementById("prime-badge").textContent = "Prime: " + pm[1] + "%";
   if (bm) document.getElementById("bench-badge").textContent = "Bench: " + bm[1] + "%";
   if (dm) document.getElementById("date-badge").textContent  = "Sheet: " + dm[1];
 
-  const rows = [];
-  for (let i = hIdx+1; i < lines.length; i++) {
-    const r      = lines[i];
-    const lender = r[col("Lender")] || "";
-    if (!lender || SKIP.some(w => lender.toLowerCase().includes(w))) continue;
-    const obj = {
-      lender,
-      date:  r[col("Date Updated")] || "",
-      group: GROUPS[lender] || "national",
-      prime: parseFloat((pm||[])[1]) || 4.45,
+  var rows = [];
+  for (var i = hIdx + 1; i < lines.length; i++) {
+    var r = lines[i];
+    var lender = r[colIdx(h, "Lender")] || "";
+    if (!lender || lender === "Lender") continue;
+    if (/low feature|regional lenders/i.test(lender)) continue;
+    var obj = {
+      lender: lender,
+      date:   r[colIdx(h, "Date Updated")] || "",
+      group:  GROUPS[lender] || "national",
+      prime:  parseFloat((pm || [])[1]) || 4.45
     };
-    RATE_CELLS.forEach(rc => { obj[rc.key] = r[col(rc.key)] || ""; });
+    for (var j = 0; j < RATE_CELLS.length; j++) {
+      var rc  = RATE_CELLS[j];
+      var idx = colIdx(h, rc.key);
+      var val = (idx >= 0 && r[idx]) ? r[idx] : "";
+      obj[rc.key] = isRate(val) ? val : "";
+    }
     rows.push(obj);
-    if (isPromo) console.log("Promo row:", obj);
   }
-  console.log("parseCSV isPromo=" + isPromo + " isNBC=" + isNBC + " hIdx=" + hIdx + " rows=" + rows.length);
   return rows;
 }
 
+function parsePromoCSV(text) {
+  var lines = text.trim().split("\n").map(parseLine);
+  var hIdx  = 0;
+  for (var i = 0; i < lines.length; i++) {
+    if (lines[i].indexOf("Lender") >= 0) { hIdx = i; break; }
+  }
+  var h    = lines[hIdx];
+  var rows = [];
+  for (var i = hIdx + 1; i < lines.length; i++) {
+    var r = lines[i];
+    var lender = r[colIdx(h, "Lender")] || "";
+    if (!lender || lender === "Lender") continue;
+    var obj = {
+      lender: lender,
+      date:   r[colIdx(h, "Date Updated")] || "",
+      group:  "promo",
+      prime:  4.45
+    };
+    for (var j = 0; j < RATE_CELLS.length; j++) {
+      var rc  = RATE_CELLS[j];
+      var cname = rc.pkey || rc.key;
+      var idx   = colIdx(h, cname);
+      var val   = (idx >= 0 && r[idx]) ? r[idx] : "";
+      obj[rc.key] = isRate(val) ? val : "";
+    }
+    rows.push(obj);
+  }
+  return rows;
+}
+
+function parseNBCCSV(text) {
+  var lines = text.trim().split("\n").map(parseLine);
+  var hIdx  = 0;
+  for (var i = 0; i < lines.length; i++) {
+    if (lines[i].indexOf("Lender") >= 0) { hIdx = i; break; }
+  }
+  var h    = lines[hIdx];
+  var rows = [];
+  for (var i = hIdx + 1; i < lines.length; i++) {
+    var r = lines[i];
+    var lender = r[colIdx(h, "Lender")] || "";
+    if (!lender || lender === "Lender") continue;
+    var obj = {
+      lender: lender,
+      date:   r[colIdx(h, "Date Updated")] || "",
+      group:  "promo",
+      prime:  4.45
+    };
+    // Use NBC_CELLS to map columns
+    for (var j = 0; j < NBC_CELLS.length; j++) {
+      var nc  = NBC_CELLS[j];
+      var idx = colIdx(h, nc.col);
+      var val = (idx >= 0 && r[idx]) ? r[idx] : "";
+      obj[nc.key] = isRate(val) ? val : "";
+    }
+    // Also initialise unused keys to empty
+    for (var j = 0; j < RATE_CELLS.length; j++) {
+      if (obj[RATE_CELLS[j].key] === undefined) obj[RATE_CELLS[j].key] = "";
+    }
+    rows.push(obj);
+  }
+  return rows;
+}
+
+// ── Fetch ─────────────────────────────────────────────────────────────────────
+function loadData() {
+  setStatus("loading", "Loading live rates...");
+  Promise.all([fetch(CSV_MAIN), fetch(CSV_PROMO), fetch(CSV_NBC)])
+    .then(function(responses) {
+      return Promise.all(responses.map(function(r) { return r.text(); }));
+    })
+    .then(function(texts) {
+      var main  = parseMainCSV(texts[0]);
+      var promo = parsePromoCSV(texts[1]);
+      var nbc   = parseNBCCSV(texts[2]);
+      allData   = main.concat(promo).concat(nbc);
+      buildLenderPicker();
+      setStatus("ok", "Live — " + allData.length + " lenders — " + new Date().toLocaleTimeString());
+      renderAll();
+    })
+    .catch(function(e) {
+      setStatus("err", "Error: " + e.message);
+    });
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 function numVal(str) {
-  const m = str && str.match(/^[\d.]+/);
+  var m = str && str.match(/^[\d.]+/);
   return m ? parseFloat(m[0]) : null;
 }
 
-// Get the "representative" rate for a lender given current filters (for sorting)
-function lenderSortRate(l) {
-  let best = null;
-  RATE_CELLS.forEach(rc => {
-    if (!cellVisible(rc)) return;
-    const v = numVal(l[rc.key]);
-    if (v !== null && (best === null || v < best)) best = v;
-  });
-  return best === null ? 999 : best;
+function cellsForLender(lender) {
+  // NBC lenders use NBC_CELLS for display, others use RATE_CELLS
+  if (lender === "National Bank (Purchase Without Cashback or External Refinancing)" ||
+      lender === "National Bank (Purchase With Cashback)") {
+    return NBC_CELLS;
+  }
+  return RATE_CELLS;
 }
 
 function cellVisible(rc) {
@@ -299,192 +378,166 @@ function cellVisible(rc) {
   return true;
 }
 
-function buildLenderPicker() {
-  const box = document.getElementById("lender-checkboxes");
-  box.innerHTML = "";
-  allData.forEach(l => {
-    const checked = tickerLenders.has(l.lender);
-    const btn = document.createElement("button");
-    btn.className = "pill" + (checked ? " active" : "");
-    btn.textContent = l.lender;
-    btn.onclick = () => {
-      if (tickerLenders.has(l.lender)) {
-        tickerLenders.delete(l.lender);
-        btn.classList.remove("active");
-      } else {
-        tickerLenders.add(l.lender);
-        btn.classList.add("active");
-      }
-      // Update ticker live but keep picker open
-      let src = (tickerMode === "pick" && tickerLenders.size > 0)
-        ? allData.filter(l => tickerLenders.has(l.lender))
-        : allData.filter(l => !TICKER_SKIP.includes(l.lender));
-      let bestNum = 999;
-      src.forEach(l => {
-        RATE_CELLS.forEach(rc => {
-          if (!cellVisible(rc)) return;
-          const v = numVal(l[rc.key]);
-          if (v !== null && v < bestNum) bestNum = v;
-        });
-      });
-      renderTicker(src, bestNum);
-    };
-    box.appendChild(btn);
-  });
+function lenderSortRate(l) {
+  var cells = cellsForLender(l.lender);
+  var best  = null;
+  for (var i = 0; i < cells.length; i++) {
+    if (!cellVisible(cells[i])) continue;
+    var v = numVal(l[cells[i].key]);
+    if (v !== null && (best === null || v < best)) best = v;
+  }
+  return best === null ? 999 : best;
 }
 
-const TICKER_SKIP = ["First Nat (Rate Option +)", "CMLS (Rate Advantage)", "MCAP (Value-Flex)", "RMG (Low Rate Basic)"];
-
-function refreshTicker() {
-  let src = (tickerMode === "pick" && tickerLenders.size > 0)
-    ? allData.filter(l => tickerLenders.has(l.lender))
-    : allData.filter(l => !TICKER_SKIP.includes(l.lender));
-
-  let bestNum = 999;
-  src.forEach(l => {
-    RATE_CELLS.forEach(rc => {
-      if (!cellVisible(rc)) return;
-      const v = numVal(l[rc.key]);
-      if (v !== null && v < bestNum) bestNum = v;
-    });
-  });
-  renderTicker(src, bestNum);
-  document.getElementById("lender-checkboxes").style.display = "none";
+function setStatus(state, msg) {
+  document.getElementById("dot").className          = "dot " + state;
+  document.getElementById("status-text").textContent = msg;
 }
 
-function setTickerMode(mode, btn) {
-  tickerMode = mode;
-  btn.closest(".filter-row").querySelectorAll(".pill").forEach(p => p.classList.remove("active"));
-  btn.classList.add("active");
-  document.getElementById("lender-picker").style.display = mode === "pick" ? "block" : "none";
-  document.getElementById("lender-checkboxes").style.display = "flex";
-  renderAll();
-}
-
+// ── Filters ───────────────────────────────────────────────────────────────────
 function setFilter(dim, val, btn) {
   filters[dim] = val;
-  btn.closest(".filter-row").querySelectorAll(".pill").forEach(p => p.classList.remove("active","var"));
+  btn.closest(".filter-row").querySelectorAll(".pill").forEach(function(p) {
+    p.classList.remove("active","var");
+  });
   btn.classList.add("active");
   if (val === "variable") btn.classList.add("var");
   renderAll();
 }
 
-function applySort(lenders) {
-  const s = document.getElementById("sort-select").value;
-  const out = [...lenders];
-  if (filters.group !== "all") out.filter(l => l.group === filters.group);
-  if (s === "rate-asc")   out.sort((a,b) => lenderSortRate(a) - lenderSortRate(b));
-  if (s === "rate-desc")  out.sort((a,b) => lenderSortRate(b) - lenderSortRate(a));
-  if (s === "lender-asc") out.sort((a,b) => a.lender.localeCompare(b.lender));
-  if (s === "lender-desc")out.sort((a,b) => b.lender.localeCompare(a.lender));
-  return out;
+// ── Ticker lender picker ──────────────────────────────────────────────────────
+function buildLenderPicker() {
+  var box = document.getElementById("lender-checkboxes");
+  box.innerHTML = "";
+  allData.forEach(function(l) {
+    var btn = document.createElement("button");
+    btn.className   = "pill" + (tickerLenders[l.lender] ? " active" : "");
+    btn.textContent = l.lender;
+    btn.onclick     = function() {
+      tickerLenders[l.lender] = !tickerLenders[l.lender];
+      btn.classList.toggle("active", !!tickerLenders[l.lender]);
+      renderTickerOnly();
+    };
+    box.appendChild(btn);
+  });
 }
 
-function renderAll() {
-  // Filter lenders by group
-  let lenders = filters.group === "all" ? allData : allData.filter(l => l.group === filters.group);
-  lenders = applySort(lenders);
+function setTickerMode(mode, btn) {
+  tickerMode = mode;
+  btn.closest(".filter-row").querySelectorAll(".pill").forEach(function(p) { p.classList.remove("active"); });
+  btn.classList.add("active");
+  document.getElementById("lender-picker").style.display = mode === "pick" ? "block" : "none";
+  document.getElementById("lender-checkboxes").style.display = "flex";
+  renderTickerOnly();
+}
 
-  // Find global best rate across all visible cells
-  let bestNum = 999;
-  lenders.forEach(l => {
-    RATE_CELLS.forEach(rc => {
+function refreshTicker() {
+  document.getElementById("lender-checkboxes").style.display = "none";
+  renderTickerOnly();
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function getFilteredLenders() {
+  var lenders = filters.group === "all" ? allData : allData.filter(function(l) { return l.group === filters.group; });
+  var s = document.getElementById("sort-select").value;
+  lenders = lenders.slice();
+  if (s === "rate-asc")   lenders.sort(function(a,b) { return lenderSortRate(a) - lenderSortRate(b); });
+  if (s === "rate-desc")  lenders.sort(function(a,b) { return lenderSortRate(b) - lenderSortRate(a); });
+  if (s === "lender-asc") lenders.sort(function(a,b) { return a.lender.localeCompare(b.lender); });
+  if (s === "lender-desc")lenders.sort(function(a,b) { return b.lender.localeCompare(a.lender); });
+  return lenders;
+}
+
+function findBest(lenders) {
+  var best = null;
+  lenders.forEach(function(l) {
+    var cells = cellsForLender(l.lender);
+    cells.forEach(function(rc) {
       if (!cellVisible(rc)) return;
-      const v = numVal(l[rc.key]);
-      if (v !== null && v < bestNum) bestNum = v;
+      var v = numVal(l[rc.key]);
+      if (v !== null && (best === null || v < best)) best = v;
     });
   });
+  return best;
+}
 
-  renderTicker(lenders, bestNum);
-
-  if (!lenders.length) {
-    document.getElementById("grid").innerHTML = '<div class="no-data">No lenders match this filter.</div>';
-    document.getElementById("result-info").textContent = "";
-    return;
+function renderTickerOnly() {
+  var lenders = getFilteredLenders();
+  var src     = lenders;
+  if (tickerMode === "pick") {
+    src = allData.filter(function(l) { return tickerLenders[l.lender]; });
+  } else {
+    src = src.filter(function(l) { return TICKER_SKIP.indexOf(l.lender) < 0; });
   }
+  var items = [];
+  src.forEach(function(l) {
+    var cells = cellsForLender(l.lender);
+    cells.forEach(function(rc) {
+      if (!cellVisible(rc)) return;
+      var val = l[rc.key];
+      if (!val) return;
+      items.push({lender:l.lender, val:val, label:rc.label, num:numVal(val)||999});
+    });
+  });
+  items.sort(function(a,b) { return a.num - b.num; });
+  items = items.slice(0, 24);
+  var html = items.map(function(it) {
+    return '<span class="ticker-item"><span class="ticker-lender">' + it.lender +
+           '</span><span class="ticker-rate">' + it.val +
+           '</span><span class="ticker-label">' + it.label + '</span></span>';
+  }).join("");
+  document.getElementById("ticker").innerHTML = html + html;
+}
 
-  let visibleCards = 0;
-  let html = "";
+function renderGrid(lenders) {
+  var bestNum = findBest(lenders);
+  var html    = "";
+  var visible = 0;
 
-  lenders.forEach(l => {
-    // Check if this card has any visible, non-empty cells
-    const hasAny = RATE_CELLS.some(rc => cellVisible(rc) && l[rc.key] && l[rc.key] !== "-");
+  lenders.forEach(function(l) {
+    var cells  = cellsForLender(l.lender);
+    var hasAny = cells.some(function(rc) { return cellVisible(rc) && l[rc.key]; });
     if (!hasAny) return;
-    visibleCards++;
+    visible++;
 
-    const sortRate = lenderSortRate(l);
-    const isBestCard = sortRate === bestNum;
+    var sortRate  = lenderSortRate(l);
+    var isBestCard = (sortRate === bestNum && bestNum !== 999);
+    var cellsHtml = "";
 
-    let cellsHtml = "";
-    let lastDiv = null;
-
-    RATE_CELLS.forEach(rc => {
-      const show = cellVisible(rc);
-      const val  = l[rc.key] || "";
-      const empty = !val || val === "-";
-      const isB  = show && !empty && numVal(val) === bestNum;
-
-      // Section divider
-      if (rc.div && show) {
+    cells.forEach(function(rc) {
+      if (rc.div && cellVisible(rc)) {
         cellsHtml += '<div class="section-divider">' + rc.div + '</div>';
-        lastDiv = rc.div;
-      } else if (rc.div && !show && lastDiv !== rc.div) {
-        lastDiv = rc.div;
       }
-
-      if (!show) return;
-
-      cellsHtml += '<div class="rate-cell' + (isB ? " best" : "") + '">' +
+      if (!cellVisible(rc)) return;
+      var val   = l[rc.key] || "";
+      var empty = !val;
+      var isBest = !empty && numVal(val) === bestNum;
+      cellsHtml += '<div class="rate-cell' + (isBest ? " best" : "") + '">' +
         '<div class="rate-cell-label">' + rc.label + '</div>' +
         '<div class="rate-val ' + rc.cls + (empty ? " empty" : "") + '">' + (empty ? "—" : val) + '</div>' +
         '</div>';
     });
 
     html += '<div class="lender-card">' +
-      '<div class="lender-header">' +
-        '<div>' +
-          '<div class="lender-name">' + l.lender + '</div>' +
-          '<div class="lender-sub">Updated ' + l.date + ' &bull; Prime ' + l.prime + '%</div>' +
-        '</div>' +
-        (isBestCard ? '<span style="font-size:10px;padding:2px 8px;border-radius:3px;background:#451a03;color:#fbbf24">&#9733; Best</span>' : '') +
+      '<div class="lender-header"><div>' +
+        '<div class="lender-name">' + l.lender + '</div>' +
+        '<div class="lender-sub">Updated ' + l.date + ' &bull; Prime ' + l.prime + '%</div>' +
       '</div>' +
-      '<div class="rate-group">' + cellsHtml + '</div>' +
-    '</div>';
+      (isBestCard ? '<span style="font-size:10px;padding:2px 8px;border-radius:3px;background:#451a03;color:#fbbf24">&#9733; Best</span>' : '') +
+      '</div><div class="rate-group">' + cellsHtml + '</div></div>';
   });
 
   document.getElementById("grid").innerHTML = html || '<div class="no-data">No rates match your filters.</div>';
-  document.getElementById("result-info").textContent = visibleCards + " lenders shown";
+  document.getElementById("result-info").textContent = visible + " lenders shown";
 }
 
-function renderTicker(lenders, bestNum) {
-  let items = [];
-  lenders.forEach(l => {
-    RATE_CELLS.forEach(rc => {
-      if (!cellVisible(rc)) return;
-      const val = l[rc.key];
-      if (!val || val === "-") return;
-      items.push({lender: l.lender, val, label: rc.label, num: numVal(val) || 999});
-    });
-  });
-  items.sort((a,b) => a.num - b.num);
-  items = items.slice(0, 24);
-
-  let html = items.map(it =>
-    '<span class="ticker-item">' +
-    '<span class="ticker-lender">' + it.lender + '</span>' +
-    '<span class="ticker-rate">'   + it.val    + '</span>' +
-    '<span class="ticker-label">'  + it.label  + '</span>' +
-    '</span>'
-  ).join("");
-
-  document.getElementById("ticker").innerHTML = html + html;
+function renderAll() {
+  var lenders = getFilteredLenders();
+  renderTickerOnly();
+  renderGrid(lenders);
 }
 
-function setStatus(state, msg) {
-  document.getElementById("dot").className = "dot " + state;
-  document.getElementById("status-text").textContent = msg;
-}
-
+// ── Boot ──────────────────────────────────────────────────────────────────────
 loadData();
 setInterval(loadData, 10 * 60 * 1000);
 </script>
