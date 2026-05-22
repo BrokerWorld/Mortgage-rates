@@ -249,7 +249,9 @@ function parseCSV(text, isPromo) {
     };
     RATE_CELLS.forEach(rc => { obj[rc.key] = r[col(rc.key)] || ""; });
     rows.push(obj);
+    if (isPromo) console.log("Promo row:", obj);
   }
+  console.log("parseCSV isPromo=" + isPromo + " hIdx=" + hIdx + " rows=" + rows.length);
   return rows;
 }
 
