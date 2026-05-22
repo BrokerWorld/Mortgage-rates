@@ -174,23 +174,28 @@ const GROUPS = {
   "CMLS (Rate Advantage)":"nofrills","First Nat (Rate Option +)":"nofrills",
   "MCAP (Value-Flex)":"nofrills","RMG (Low Rate Basic)":"nofrills",
   "RFA (Promo)":"promo",
+  "National Bank (Grid A)":"promo",
+  "National Bank (Grid B)":"promo",
 };
 
 // All rate cells with their filter metadata
 const RATE_CELLS = [
   // 5yr Fixed
-  {key:"5yr Fixed - Insured",      promoKey:"5yr Fixed - Insured",  term:"5yr",type:"fixed",   ins:"insured",  label:"5yr Fixed — Insured",         cls:""},
-  {key:"5yr Fixed - Unins (25yr)", promoKey:"5yr Fixed - Unins",    term:"5yr",type:"fixed",   ins:"uninsured",label:"5yr Fixed — Uninsured (25yr)", cls:""},
-  {key:"5yr Fixed - Refi (25yr)",  promoKey:"",                     term:"5yr",type:"fixed",   ins:"refi",     label:"5yr Fixed — Refi (25yr)",      cls:"refi"},
-  {key:"5yr Fixed - Rentals",      promoKey:"5yr Fixed - Rentals",  term:"5yr",type:"fixed",   ins:"rentals",  label:"5yr Fixed — Rentals",          cls:"refi"},
+  {key:"5yr Fixed - Insured",      promoKey:"5yr Fixed - Insured",   term:"5yr",type:"fixed",   ins:"insured",  label:"5yr Fixed — Insured",         cls:""},
+  {key:"5yr Fixed - Unins (25yr)", promoKey:"5yr Fixed - Uninsured", term:"5yr",type:"fixed",   ins:"uninsured",label:"5yr Fixed — Uninsured",        cls:""},
+  {key:"5yr Fixed - Refi (25yr)",  promoKey:"",                      term:"5yr",type:"fixed",   ins:"refi",     label:"5yr Fixed — Refi (25yr)",      cls:"refi"},
+  {key:"5yr Fixed - Rentals",      promoKey:"",                      term:"5yr",type:"fixed",   ins:"rentals",  label:"5yr Fixed — Rentals",          cls:"refi"},
   // 5yr Variable
-  {key:"5yr Var - Insured",        promoKey:"5yr Var - Insured",    term:"5yr",type:"variable",ins:"insured",  label:"5yr Var — Insured",            cls:"var",  div:"5-Year Variable"},
-  {key:"5yr Var - Unins (25yr)",   promoKey:"5yr Var - Unins",      term:"5yr",type:"variable",ins:"uninsured",label:"5yr Var — Uninsured (25yr)",   cls:"var"},
-  {key:"5yr Var - Refi (25yr)",    promoKey:"",                     term:"5yr",type:"variable",ins:"refi",     label:"5yr Var — Refi (25yr)",        cls:"var refi"},
+  {key:"5yr Var - Insured",        promoKey:"5yr Var - Insured",     term:"5yr",type:"variable",ins:"insured",  label:"5yr Var — Insured",            cls:"var",  div:"5-Year Variable"},
+  {key:"5yr Var - Unins (25yr)",   promoKey:"5yr Var - Uninsured",   term:"5yr",type:"variable",ins:"uninsured",label:"5yr Var — Uninsured",          cls:"var"},
+  {key:"5yr Var - Refi (25yr)",    promoKey:"",                      term:"5yr",type:"variable",ins:"refi",     label:"5yr Var — Refi (25yr)",        cls:"var refi"},
+  // 4yr Fixed (BNC specific)
+  {key:"4yr Fixed - Insured",      promoKey:"4yr Fixed - Insured",   term:"4yr",type:"fixed",   ins:"insured",  label:"4yr Fixed — Insured",          cls:"",     div:"4-Year Fixed"},
+  {key:"4yr Fixed - Uninsured",    promoKey:"4yr Fixed - Uninsured", term:"4yr",type:"fixed",   ins:"uninsured",label:"4yr Fixed — Uninsured",        cls:""},
   // 3yr Fixed
-  {key:"3yr Fixed - Insured",      promoKey:"3yr Fixed - Insured",  term:"3yr",type:"fixed",   ins:"insured",  label:"3yr Fixed — Insured",          cls:"",     div:"3-Year Fixed"},
-  {key:"3yr Fixed - Ins 80%",      promoKey:"",                     term:"3yr",type:"fixed",   ins:"insured",  label:"3yr Fixed — Ins 80%",          cls:""},
-  {key:"3yr Fixed - Unins+Refi",   promoKey:"",                     term:"3yr",type:"fixed",   ins:"refi",     label:"3yr Fixed — Unins + Refi",     cls:"refi"},
+  {key:"3yr Fixed - Insured",      promoKey:"3yr Fixed - Insured",   term:"3yr",type:"fixed",   ins:"insured",  label:"3yr Fixed — Insured",          cls:"",     div:"3-Year Fixed"},
+  {key:"3yr Fixed - Ins 80%",      promoKey:"",                      term:"3yr",type:"fixed",   ins:"insured",  label:"3yr Fixed — Ins 80%",          cls:""},
+  {key:"3yr Fixed - Unins+Refi",   promoKey:"3yr Fixed - Uninsured", term:"3yr",type:"fixed",   ins:"refi",     label:"3yr Fixed — Uninsured",        cls:"refi"},
 ];
 
 const SKIP = ["lender","low feature","no frills","regional lender","national lender"];
