@@ -165,10 +165,9 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#0f172a;color:#e2
 </div>
 
 <script>
-const SHEET_ID      = "1Ywr8a7waQP7fLQIC9hbiHthIY_IVSGPZp_v1c-Yba10";
-const CSV_URL       = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/export?format=csv&gid=0";
+const SHEET_ID    = "1Ywr8a7waQP7fLQIC9hbiHthIY_IVSGPZp_v1c-Yba10";
+const CSV_URL     = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/export?format=csv&gid=0";
 const CSV_URL_PROMO = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/export?format=csv&gid=1193463627";
-const CSV_URL_NBC   = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/export?format=csv&gid=2014516855";
 
 const GROUPS = {
   "ATB":"regional","Desjardins":"regional","DUCA":"regional","Tru Cooperative Bank":"regional",
@@ -199,16 +198,7 @@ const RATE_CELLS = [
   {key:"3yr Fixed - Unins+Refi",   promoKey:"3yr Fixed - Uninsured", term:"3yr",type:"fixed",   ins:"refi",     label:"3yr Fixed — Uninsured",        cls:"refi"},
 ];
 
-const NBC_RATE_CELLS = [
-  {key:"5yr Fixed - Insured",   term:"5yr",type:"fixed",   ins:"insured",  label:"5yr Fixed — Insured",   cls:""},
-  {key:"5yr Fixed - Uninsured", term:"5yr",type:"fixed",   ins:"uninsured",label:"5yr Fixed — Uninsured", cls:""},
-  {key:"5yr Var - Insured",     term:"5yr",type:"variable",ins:"insured",  label:"5yr Var — Insured",     cls:"var", div:"5-Year Variable"},
-  {key:"5yr Var - Uninsured",   term:"5yr",type:"variable",ins:"uninsured",label:"5yr Var — Uninsured",   cls:"var"},
-  {key:"4yr Fixed - Insured",   term:"4yr",type:"fixed",   ins:"insured",  label:"4yr Fixed — Insured",   cls:"",    div:"4-Year Fixed"},
-  {key:"4yr Fixed - Uninsured", term:"4yr",type:"fixed",   ins:"uninsured",label:"4yr Fixed — Uninsured", cls:""},
-  {key:"3yr Fixed - Insured",   term:"3yr",type:"fixed",   ins:"insured",  label:"3yr Fixed — Insured",   cls:"",    div:"3-Year Fixed"},
-  {key:"3yr Fixed - Uninsured", term:"3yr",type:"fixed",   ins:"uninsured",label:"3yr Fixed — Uninsured", cls:""},
-];
+const SKIP = ["lender","low feature","no frills","regional lender","national lender"];
 
 let allData = [];
 let filters = {group:"all",type:"all",term:"all",ins:"all"};
@@ -218,28 +208,23 @@ let tickerLenders = new Set();
 async function loadData() {
   setStatus("loading","Loading live rates...");
   try {
-    const [res1, res2, res3] = await Promise.all([
-      fetch(CSV_URL), fetch(CSV_URL_PROMO), fetch(CSV_URL_NBC)
-    ]);
+    const [res1, res2] = await Promise.all([fetch(CSV_URL), fetch(CSV_URL_PROMO)]);
     if (!res1.ok) throw new Error("HTTP " + res1.status);
-    const [text1, text2, text3] = await Promise.all([
-      res1.text(), res2.text(), res3.text()
-    ]);
-    const main  = parseCSV(text1, false, RATE_CELLS);
-    const promo = parseCSV(text2, true,  RATE_CELLS);
-    const nbc   = parseCSV(text3, true,  NBC_RATE_CELLS);
-    allData = [...main, ...promo, ...nbc];
+    const [text1, text2] = await Promise.all([res1.text(), res2.text()]);
+    const main  = parseCSV(text1, false);
+    const promo = parseCSV(text2, true);
+    allData = [...main, ...promo];
     if (!allData.length) throw new Error("No lender data found");
     buildLenderPicker();
     setStatus("ok","Live — " + allData.length + " lenders — " + new Date().toLocaleTimeString());
     renderAll();
   } catch(e) {
     setStatus("err","Error: " + e.message);
-    document.getElementById("grid").innerHTML = '<div class="no-data">Could not load data.</div>';
+    document.getElementById("grid").innerHTML = '<div class="no-data">Could not load data.<br>Make sure the sheet is published as CSV.</div>';
   }
 }
 
-function parseCSV(text, isPromo, rateCells) {
+function parseCSV(text, isPromo) {
   const lines = text.trim().split("\n").map(l =>
     l.split(",").map(c => c.replace(/^"|"$/g,"").trim())
   );
