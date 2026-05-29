@@ -92,6 +92,14 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#0f172a;color:#e2
       <button class="pill" onclick="setFilter('group','regional',this)">Regional</button>
       <button class="pill" onclick="setFilter('group','nofrills',this)">No frills</button>
       <button class="pill" onclick="setFilter('group','promo',this)">Promo</button>
+      <button class="pill" onclick="setFilter('group','alternative',this)">Alternative</button>
+      <button class="pill" onclick="setFilter('group','specialty',this)">Specialty</button>
+      <button class="pill" onclick="setFilter('group','mic',this)">MIC</button>
+      <button class="pill" onclick="setFilter('group','lenderiq-national',this)">LIQ National</button>
+      <button class="pill" onclick="setFilter('group','lenderiq-regional',this)">LIQ Regional</button>
+      <button class="pill" onclick="setFilter('group','lenderiq-alt',this)">LIQ Alternative</button>
+      <button class="pill" onclick="setFilter('group','lenderiq-specialty',this)">LIQ Specialty</button>
+      <button class="pill" onclick="setFilter('group','lenderiq-mic',this)">LIQ MIC</button>
     </div>
   </div>
   <div class="filter-divider"></div>
@@ -164,6 +172,7 @@ var SHEET_ID     = "1Ywr8a7waQP7fLQIC9hbiHthIY_IVSGPZp_v1c-Yba10";
 var CSV_MAIN     = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/export?format=csv&gid=0";
 var CSV_PROMO    = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/export?format=csv&gid=1193463627";
 var CSV_NBC      = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/export?format=csv&gid=2014516855";
+var CSV_LENDERIQ = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/export?format=csv&gid=813287123";
 
 var GROUPS = {
   "ATB":"regional","Desjardins":"regional","DUCA":"regional","Tru Cooperative Bank":"regional",
@@ -200,7 +209,69 @@ var NBC_CELLS = [
   {key:"3yr Fixed - Unins+Refi",   col:"3yr Fixed - Uninsured", term:"3yr",type:"fixed",   ins:"refi",     label:"3yr Fixed — Uninsured", cls:"refi"}
 ];
 
-var TICKER_SKIP = ["First Nat (Rate Option +)","CMLS (Rate Advantage)","MCAP (Value-Flex)","RMG (Low Rate Basic)"];
+var LIQ_GROUPS = {
+  // National
+  "First National Financial":"lenderiq-national",
+  "TD Canada Trust":"lenderiq-national",
+  "RMG Mortgages":"lenderiq-national",
+  "Highclere Capital":"lenderiq-national",
+  "National Bank":"lenderiq-national",
+  "RFA":"lenderiq-national",
+  "CMLS Financial":"lenderiq-national",
+  "B2B Bank":"lenderiq-national",
+  "Manulife":"lenderiq-national",
+  "MERIX - Standard (Lendwise)":"lenderiq-national",
+  "MERIX - Trailer":"lenderiq-national",
+  "Strive":"lenderiq-national",
+  "Wiseday":"lenderiq-national",
+  "Marathon Mortgage":"lenderiq-national",
+  "Radius Financial":"lenderiq-national",
+  "MCAN Home - Precision Prime for Insured":"lenderiq-national",
+  "MCAP":"lenderiq-national",
+  "Neo Financial™":"lenderiq-national",
+  "Scotiabank":"lenderiq-national",
+  "Bank of Montreal":"lenderiq-national",
+  "Peoples Bank (For Exclusive Partners Only)":"lenderiq-national",
+  // Regional
+  "Desjardins":"lenderiq-regional",
+  "DUCA":"lenderiq-regional",
+  "FirstOntario Credit Union":"lenderiq-regional",
+  "Meridian":"lenderiq-regional",
+  "Alterna":"lenderiq-regional",
+  "Ganaraska Financial Credit Union":"lenderiq-regional",
+  "IC Savings":"lenderiq-regional",
+  "Effort Trust":"lenderiq-regional",
+  "CTBC Bank":"lenderiq-regional",
+  "Shinhan Bank of Canada":"lenderiq-regional",
+  "WealthONE Bank":"lenderiq-regional",
+  // Alternative
+  "Equitable Alternative Solutions":"lenderiq-alt",
+  "Community Trust":"lenderiq-alt",
+  "Home Trust":"lenderiq-alt",
+  "HAVENTREE Bank":"lenderiq-alt",
+  "Bridgewater Bank":"lenderiq-alt",
+  "B2B Bank Alternative":"lenderiq-alt",
+  "CWB Optimum Mortgage (Alternative Lending)":"lenderiq-alt",
+  "FirstOntario Credit Union (Alt A)":"lenderiq-alt",
+  "DUCA (Near Prime)":"lenderiq-alt",
+  "First National Excalibur":"lenderiq-alt",
+  "MCAN Home - Discover Alternative for Uninsured":"lenderiq-alt",
+  "Aspire by Strive Capital":"lenderiq-alt",
+  "CMLS Financial - Alternative Solutions. (AVEO +)":"lenderiq-alt",
+  "AVEO by CMLS Financial":"lenderiq-alt",
+  "RFA Alternative":"lenderiq-alt",
+  "NPX":"lenderiq-alt",
+  "Eclipse (MCAP & RMG)":"lenderiq-alt",
+  // Specialty
+  "Bloom Reverse Mortgages":"lenderiq-specialty",
+  "Equitable Reverse Mortgages":"lenderiq-specialty",
+  "HomeEquity Bank":"lenderiq-specialty",
+  "Fraction Lending Inc":"lenderiq-specialty",
+  "Farm Lending Canada":"lenderiq-specialty",
+  // MIC
+  "Neighbourhood Holding Company Ltd.":"lenderiq-mic",
+  "Glasslake Funding":"lenderiq-mic",
+};
 var allData     = [];
 var filters     = {group:"all",type:"all",term:"all",ins:"all"};
 var tickerMode  = "all";
@@ -228,6 +299,8 @@ function colIdx(headers, name) {
 
 function isRate(v) {
   if (!v) return false;
+  // Reject penalty descriptions and other non-rate text
+  if (/penalty|bona fide|clause|sale/i.test(v)) return false;
   if (!isNaN(parseFloat(v))) return true;
   if (/^\d[\d.]*\s*\(P/.test(v)) return true;
   return false;
@@ -301,6 +374,63 @@ function parsePromoCSV(text) {
   return rows;
 }
 
+var TICKER_SKIP = ["First Nat (Rate Option +)","CMLS (Rate Advantage)","MCAP (Value-Flex)","RMG (Low Rate Basic)"];
+
+function parseLenderIQCSV(text) {
+  var lines = text.trim().split("\n").map(parseLine);
+  var hIdx  = 0;
+  for (var i = 0; i < lines.length; i++) {
+    if (lines[i].indexOf("Lender") >= 0) { hIdx = i; break; }
+  }
+  var h   = lines[hIdx];
+  var col = function(name) {
+    for (var i = 0; i < h.length; i++) { if (h[i] === name) return i; }
+    return -1;
+  };
+  var rows = [];
+  for (var i = hIdx + 1; i < lines.length; i++) {
+    var r      = lines[i];
+    var lender = r[col("Lender")] || "";
+    if (!lender || lender === "Lender") continue;
+    if (/low feature|regional lenders/i.test(lender)) continue;
+    var grp = LIQ_GROUPS[lender] || "lenderiq-national";
+    var obj = {
+      lender: lender,
+      date:   r[col("Parsed At")] || "",
+      group:  grp,
+      prime:  4.45
+    };
+    // Map standard RATE_CELLS keys to LenderIQ sheet column names
+    var liqMap = {
+      "5yr Fixed - Insured":      "5yr Fixed - Insured",
+      "5yr Fixed - Unins (25yr)": "5yr Fixed - Uninsured",
+      "5yr Fixed - Refi (25yr)":  "5yr Fixed - Refi",
+      "5yr Fixed - Rentals":      "5yr Fixed - Rental",
+      "5yr Var - Insured":        "5yr Var - Insured",
+      "5yr Var - Unins (25yr)":   "5yr Var - Uninsured",
+      "5yr Var - Refi (25yr)":    "5yr Var - Refi",
+      "3yr Fixed - Insured":      "3yr Fixed - Insured",
+      "3yr Fixed - Ins 80%":      "3yr Fixed - Insured",
+      "3yr Fixed - Unins+Refi":   "3yr Fixed - Uninsured",
+      "4yr Fixed - Insured":      "4yr Fixed - Insured",
+      "4yr Fixed - Uninsured":    "4yr Fixed - Uninsured",
+    };
+    for (var key in liqMap) {
+      var srcCol = liqMap[key];
+      var idx    = col(srcCol);
+      var val    = (idx >= 0 && r[idx]) ? r[idx] : "";
+      obj[key]   = isRate(val) ? val : "";
+    }
+    // Also initialise unused RATE_CELLS keys to empty
+    for (var j = 0; j < RATE_CELLS.length; j++) {
+      if (obj[RATE_CELLS[j].key] === undefined) obj[RATE_CELLS[j].key] = "";
+    }
+    rows.push(obj);
+  }
+  console.log("LenderIQ rows parsed:", rows.length, rows[0] ? rows[0].lender : "none");
+  return rows;
+}
+
 function parseNBCCSV(text) {
   var lines = text.trim().split("\n").map(parseLine);
   var hIdx  = 0;
@@ -338,15 +468,16 @@ function parseNBCCSV(text) {
 // ── Fetch ─────────────────────────────────────────────────────────────────────
 function loadData() {
   setStatus("loading", "Loading live rates...");
-  Promise.all([fetch(CSV_MAIN), fetch(CSV_PROMO), fetch(CSV_NBC)])
+  Promise.all([fetch(CSV_MAIN), fetch(CSV_PROMO), fetch(CSV_NBC), fetch(CSV_LENDERIQ)])
     .then(function(responses) {
       return Promise.all(responses.map(function(r) { return r.text(); }));
     })
     .then(function(texts) {
-      var main  = parseMainCSV(texts[0]);
-      var promo = parsePromoCSV(texts[1]);
-      var nbc   = parseNBCCSV(texts[2]);
-      allData   = main.concat(promo).concat(nbc);
+      var main     = parseMainCSV(texts[0]);
+      var promo    = parsePromoCSV(texts[1]);
+      var nbc      = parseNBCCSV(texts[2]);
+      var lenderiq = parseLenderIQCSV(texts[3]);
+      allData      = main.concat(promo).concat(nbc).concat(lenderiq);
       buildLenderPicker();
       setStatus("ok", "Live — " + allData.length + " lenders — " + new Date().toLocaleTimeString());
       renderAll();
@@ -521,7 +652,7 @@ function renderGrid(lenders) {
     html += '<div class="lender-card">' +
       '<div class="lender-header"><div>' +
         '<div class="lender-name">' + l.lender + '</div>' +
-        '<div class="lender-sub">Updated ' + l.date + ' &bull; Prime ' + l.prime + '%</div>' +
+        '<div class="lender-sub">Updated ' + l.date + ' &bull; Prime ' + l.prime + '%' + (l.note ? ' &bull; ' + l.note : '') + '</div>' +
       '</div>' +
       (isBestCard ? '<span style="font-size:10px;padding:2px 8px;border-radius:3px;background:#451a03;color:#fbbf24">&#9733; Best</span>' : '') +
       '</div><div class="rate-group">' + cellsHtml + '</div></div>';
