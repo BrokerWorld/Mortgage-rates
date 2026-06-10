@@ -451,4 +451,368 @@ function parseNBCCSV(text) {
     if (!lender || lender === "Lender") continue;
     var obj = {
       lender: lender,
-      date:   r[colIdx(
+      date:   r[colIdx(h, "Date Updated")] || "",
+      group:  "promo",
+      prime:  4.45
+    };
+    // Use NBC_CELLS to map columns
+    for (var j = 0; j < NBC_CELLS.length; j++) {
+      var nc  = NBC_CELLS[j];
+      var idx = colIdx(h, nc.col);
+      var val = (idx >= 0 && r[idx]) ? r[idx] : "";
+      obj[nc.key] = isRate(val) ? val : "";
+    }
+    // Also initialise unused keys to empty
+    for (var j = 0; j < RATE_CELLS.length; j++) {
+      if (obj[RATE_CELLS[j].key] === undefined) obj[RATE_CELLS[j].key] = "";
+    }
+    rows.push(obj);
+  }
+  return rows;
+}
+
+function parseB2BCSV(text) {
+  var lines = text.trim().split("\n").map(parseLine);
+  // Row 0 = metadata: Last updated, Effective, Prime%, Bulletin, ...
+  var meta = lines[0] || [];
+  var effDate = "";
+  var prime = 4.45;
+  for (var i = 0; i < meta.length; i++) {
+    var m;
+    if ((m = meta[i].match(/Effective:\s*(.+)/))) effDate = m[1].trim();
+    if ((m = meta[i].match(/Prime:\s*([\d.]+)/))) prime = parseFloat(m[1]);
+  }
+
+  // Walk rows to build rate lookup: b2b[term_or_product][type] = {pmpp, standard}
+  var fixed = {};
+  var variable = {};
+  var section = "";
+
+  for (var i = 1; i < lines.length; i++) {
+    var r = lines[i];
+    var r0 = (r[0] || "").trim();
+    var r0l = r0.toLowerCase();
+
+    // Detect section headers
+    if (r0l.indexOf("fixed rate") >= 0 && r0l.indexOf("variable") < 0) { section = "fixed"; continue; }
+    if (r0l.indexOf("variable") >= 0 || r0l.indexOf("heloc") >= 0) { section = "variable"; continue; }
+    if (r0l.indexOf("new construction") >= 0) { section = "nc"; continue; }
+    // Skip sub-headers
+    if (r0 === "Term" || r0 === "Product" || !r0) continue;
+
+    if (section === "fixed" && r.length >= 4) {
+      var term = r0;
+      var type = (r[1] || "").trim();
+      if (!type) continue;
+      if (!fixed[term]) fixed[term] = {};
+      fixed[term][type] = { pmpp: (r[2]||"").trim(), standard: (r[3]||"").trim() };
+    }
+    else if (section === "variable" && r.length >= 4) {
+      var product = r0;
+      variable[product] = { pmpp: (r[2]||"").trim(), standard: (r[3]||"").trim() };
+    }
+  }
+
+  // Map to standard RATE_CELLS keys for PMPP and Standard tiers
+  var mapping = [
+    { key: "5yr Fixed - Insured",      fixed: "5 Year Closed", type: "Insured" },
+    { key: "5yr Fixed - Unins (25yr)", fixed: "5 Year Closed", type: "Conventional" },
+    { key: "4yr Fixed - Insured",      fixed: "4 Year Closed", type: "Insured" },
+    { key: "4yr Fixed - Uninsured",    fixed: "4 Year Closed", type: "Conventional" },
+    { key: "3yr Fixed - Insured",      fixed: "3 Year Closed", type: "Insured" },
+    { key: "3yr Fixed - Unins+Refi",   fixed: "3 Year Closed", type: "Conventional" },
+    { key: "5yr Var - Insured",        var: "5 Year Variable - Insured" },
+    { key: "5yr Var - Unins (25yr)",   var: "5 Year Variable - Conventional" },
+  ];
+
+  function buildLender(name, tier) {
+    var obj = {
+      lender: name,
+      date: effDate,
+      group: GROUPS[name] || "national",
+      prime: prime
+    };
+    for (var j = 0; j < RATE_CELLS.length; j++) obj[RATE_CELLS[j].key] = "";
+    for (var j = 0; j < mapping.length; j++) {
+      var m = mapping[j];
+      var val = "";
+      if (m.fixed && fixed[m.fixed] && fixed[m.fixed][m.type]) {
+        val = fixed[m.fixed][m.type][tier] || "";
+      } else if (m["var"] && variable[m["var"]]) {
+        val = variable[m["var"]][tier] || "";
+      }
+      if (isRate(val)) obj[m.key] = val;
+    }
+    return obj;
+  }
+
+  var rows = [];
+  rows.push(buildLender("B2B Bank (PMPP)", "pmpp"));
+  rows.push(buildLender("B2B Bank (Standard)", "standard"));
+  return rows;
+}
+
+// ── Logo matching ────────────────────────────────────────────────────────────
+var LOGO_ALIASES = {
+  "BMO":                      "Bank of Montreal",
+  "TD Bank":                  "TD Canada Trust",
+  "Lendwise/Merix":           "MERIX - Standard (Lendwise)",
+  "CMLS (Rate Advantage)":    "CMLS Financial",
+  "First Nat (Rate Option +)":"First National Financial",
+  "RMG (Low Rate Basic)":     "RMG Mortgages"
+};
+
+function applyLogos(lenderiqRows) {
+  var logoMap = {};
+  lenderiqRows.forEach(function(l) { if (l.logo) logoMap[l.lender] = l.logo; });
+
+  allData.forEach(function(l) {
+    if (l.logo) return;
+    // 1. Exact match
+    if (logoMap[l.lender]) { l.logo = logoMap[l.lender]; return; }
+    // 2. Alias match
+    var alias = LOGO_ALIASES[l.lender];
+    if (alias && logoMap[alias]) { l.logo = logoMap[alias]; return; }
+    // 3. Partial match
+    var nameLower = l.lender.toLowerCase();
+    for (var key in logoMap) {
+      var keyLower = key.toLowerCase();
+      if (keyLower.indexOf(nameLower) >= 0 || nameLower.indexOf(keyLower) >= 0) {
+        l.logo = logoMap[key]; return;
+      }
+    }
+  });
+}
+
+// Refi = Uninsurable: auto-fill between uninsured and refinance columns
+var REFI_UNINS_PAIRS = [
+  ["5yr Fixed - Unins (25yr)", "5yr Fixed - Refi (25yr)"],
+  ["5yr Var - Unins (25yr)",   "5yr Var - Refi (25yr)"],
+  ["4yr Fixed - Uninsured",    "4yr Fixed - Refi"],
+  ["3yr Fixed - Unins+Refi",   "3yr Fixed - Unins+Refi"]  // already combined, skip
+];
+
+function fillRefiUnins() {
+  allData.forEach(function(l) {
+    for (var i = 0; i < REFI_UNINS_PAIRS.length; i++) {
+      var unins = REFI_UNINS_PAIRS[i][0];
+      var refi  = REFI_UNINS_PAIRS[i][1];
+      if (unins === refi) continue;
+      if (l[unins] && !l[refi])  l[refi]  = l[unins];
+      if (l[refi]  && !l[unins]) l[unins] = l[refi];
+    }
+  });
+}
+
+// ── Fetch ───────────────────────────────────────────────────────────────────
+function loadData() {
+  setStatus("loading", "Loading live rates...");
+  Promise.all([fetch(CSV_MAIN), fetch(CSV_PROMO), fetch(CSV_NBC), fetch(CSV_LENDERIQ), fetch(CSV_B2B)])
+    .then(function(responses) {
+      return Promise.all(responses.map(function(r) { return r.text(); }));
+    })
+    .then(function(texts) {
+      var main     = parseMainCSV(texts[0]);
+      var promo    = parsePromoCSV(texts[1]);
+      var nbc      = parseNBCCSV(texts[2]);
+      var lenderiq = parseLenderIQCSV(texts[3]);
+      var b2b      = parseB2BCSV(texts[4]);
+      allData      = main.concat(promo).concat(nbc).concat(lenderiq).concat(b2b);
+      applyLogos(lenderiq);
+      fillRefiUnins();
+      buildLenderPicker();
+      setStatus("ok", "Live — " + allData.length + " lenders — " + new Date().toLocaleTimeString());
+      renderAll();
+    })
+    .catch(function(e) {
+      setStatus("err", "Error: " + e.message);
+    });
+}
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+function numVal(str) {
+  var m = str && str.match(/^[\d.]+/);
+  return m ? parseFloat(m[0]) : null;
+}
+
+function cellsForLender(lender) {
+  if (lender === "National Bank (Purchase Without Cashback or External Refinancing)" ||
+      lender === "National Bank (Purchase With Cashback)") {
+    return NBC_CELLS;
+  }
+  return RATE_CELLS;
+}
+
+function cellVisible(rc) {
+  if (filters.type !== "all" && rc.type !== filters.type) return false;
+  if (filters.term !== "all" && rc.term !== filters.term) return false;
+  if (filters.ins  !== "all" && rc.ins  !== filters.ins)  return false;
+  return true;
+}
+
+function lenderSortRate(l) {
+  var cells = cellsForLender(l.lender);
+  var best  = null;
+  for (var i = 0; i < cells.length; i++) {
+    if (!cellVisible(cells[i])) continue;
+    var v = numVal(l[cells[i].key]);
+    if (v !== null && (best === null || v < best)) best = v;
+  }
+  return best === null ? 999 : best;
+}
+
+function setStatus(state, msg) {
+  document.getElementById("dot").className          = "dot " + state;
+  document.getElementById("status-text").textContent = msg;
+}
+
+// ── Filters ─────────────────────────────────────────────────────────────────
+function setFilter(dim, val, btn) {
+  filters[dim] = val;
+  btn.closest(".filter-row").querySelectorAll(".pill").forEach(function(p) {
+    p.classList.remove("active","var");
+  });
+  btn.classList.add("active");
+  if (val === "variable") btn.classList.add("var");
+  renderAll();
+}
+
+// ── Ticker lender picker ────────────────────────────────────────────────────
+function buildLenderPicker() {
+  var box = document.getElementById("lender-checkboxes");
+  box.innerHTML = "";
+  allData.forEach(function(l) {
+    var btn = document.createElement("button");
+    btn.className   = "pill" + (tickerLenders[l.lender] ? " active" : "");
+    btn.textContent = l.lender;
+    btn.onclick     = function() {
+      tickerLenders[l.lender] = !tickerLenders[l.lender];
+      btn.classList.toggle("active", !!tickerLenders[l.lender]);
+      renderTickerOnly();
+    };
+    box.appendChild(btn);
+  });
+}
+
+function setTickerMode(mode, btn) {
+  tickerMode = mode;
+  btn.closest(".filter-row").querySelectorAll(".pill").forEach(function(p) { p.classList.remove("active"); });
+  btn.classList.add("active");
+  document.getElementById("lender-picker").style.display = mode === "pick" ? "block" : "none";
+  document.getElementById("lender-checkboxes").style.display = "flex";
+  renderTickerOnly();
+}
+
+function refreshTicker() {
+  document.getElementById("lender-checkboxes").style.display = "none";
+  renderTickerOnly();
+}
+
+// ── Render ──────────────────────────────────────────────────────────────────
+function getFilteredLenders() {
+  var lenders = filters.group === "all" ? allData : allData.filter(function(l) { return l.group === filters.group; });
+  var s = document.getElementById("sort-select").value;
+  lenders = lenders.slice();
+  if (s === "rate-asc")   lenders.sort(function(a,b) { return lenderSortRate(a) - lenderSortRate(b); });
+  if (s === "rate-desc")  lenders.sort(function(a,b) { return lenderSortRate(b) - lenderSortRate(a); });
+  if (s === "lender-asc") lenders.sort(function(a,b) { return a.lender.localeCompare(b.lender); });
+  if (s === "lender-desc")lenders.sort(function(a,b) { return b.lender.localeCompare(a.lender); });
+  return lenders;
+}
+
+function findBest(lenders) {
+  var best = null;
+  lenders.forEach(function(l) {
+    var cells = cellsForLender(l.lender);
+    cells.forEach(function(rc) {
+      if (!cellVisible(rc)) return;
+      var v = numVal(l[rc.key]);
+      if (v !== null && (best === null || v < best)) best = v;
+    });
+  });
+  return best;
+}
+
+function renderTickerOnly() {
+  var lenders = getFilteredLenders();
+  var src     = lenders;
+  if (tickerMode === "pick") {
+    src = allData.filter(function(l) { return tickerLenders[l.lender]; });
+  } else {
+    src = src.filter(function(l) { return TICKER_SKIP.indexOf(l.lender) < 0; });
+  }
+  var items = [];
+  src.forEach(function(l) {
+    var cells = cellsForLender(l.lender);
+    cells.forEach(function(rc) {
+      if (!cellVisible(rc)) return;
+      var val = l[rc.key];
+      if (!val) return;
+      items.push({lender:l.lender, val:val, label:rc.label, num:numVal(val)||999});
+    });
+  });
+  items.sort(function(a,b) { return a.num - b.num; });
+  items = items.slice(0, 24);
+  var html = items.map(function(it) {
+    return '<span class="ticker-item"><span class="ticker-lender">' + it.lender +
+           '</span><span class="ticker-rate">' + it.val +
+           '</span><span class="ticker-label">' + it.label + '</span></span>';
+  }).join("");
+  document.getElementById("ticker").innerHTML = html + html;
+}
+
+function renderGrid(lenders) {
+  var bestNum = findBest(lenders);
+  var html    = "";
+  var visible = 0;
+
+  lenders.forEach(function(l) {
+    var cells  = cellsForLender(l.lender);
+    var hasAny = cells.some(function(rc) { return cellVisible(rc) && l[rc.key]; });
+    if (!hasAny) return;
+    visible++;
+
+    var sortRate   = lenderSortRate(l);
+    var isBestCard = (sortRate === bestNum && bestNum !== 999);
+    var cellsHtml  = "";
+
+    cells.forEach(function(rc) {
+      if (rc.div && cellVisible(rc)) {
+        cellsHtml += '<div class="section-divider">' + rc.div + '</div>';
+      }
+      if (!cellVisible(rc)) return;
+      var val   = l[rc.key] || "";
+      var empty = !val;
+      var isBest = !empty && numVal(val) === bestNum;
+      cellsHtml += '<div class="rate-cell' + (isBest ? " best" : "") + '">' +
+        '<div class="rate-cell-label">' + rc.label + '</div>' +
+        '<div class="rate-val ' + rc.cls + (empty ? " empty" : "") + '">' + (empty ? "—" : val) + '</div>' +
+        '</div>';
+    });
+
+    var logoHtml = l.logo ? '<img class="lender-logo" src="' + l.logo + '" onerror="this.style.display=\'none\'">' : '';
+    html += '<div class="lender-card">' +
+      '<div class="lender-header"><div>' +
+        '<div class="lender-name">' + logoHtml + l.lender + '</div>' +
+        '<div class="lender-sub">Updated ' + l.date + ' &bull; Prime ' + l.prime + '%' + (l.note ? ' &bull; ' + l.note : '') + '</div>' +
+      '</div>' +
+      (isBestCard ? '<span style="font-size:10px;padding:2px 8px;border-radius:3px;background:#451a03;color:#fbbf24">&#9733; Best</span>' : '') +
+      '</div><div class="rate-group">' + cellsHtml + '</div></div>';
+  });
+
+  document.getElementById("grid").innerHTML = html || '<div class="no-data">No rates match your filters.</div>';
+  document.getElementById("result-info").textContent = visible + " lenders shown";
+}
+
+function renderAll() {
+  var lenders = getFilteredLenders();
+  renderTickerOnly();
+  renderGrid(lenders);
+}
+
+// ── Boot ────────────────────────────────────────────────────────────────────
+loadData();
+setInterval(loadData, 10 * 60 * 1000);
+</script>
+</body>
+</html>
