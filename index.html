@@ -45,18 +45,19 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#0f172a;color:#e2
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1px;background:#1e293b}
 .lender-card{background:#0f172a;padding:16px}
 .lender-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
-.lender-name{font-size:14px;font-weight:600;color:#e2e8f0}
-.lender-sub{font-size:11px;color:#475569;margin-top:2px}
+.lender-name{font-size:16px;font-weight:600;color:#cbd5e1;display:flex;align-items:center;gap:8px}
+.lender-logo{width:30px;height:30px;border-radius:3px;object-fit:contain;background:#1e293b}
+.lender-sub{font-size:12px;color:#64748b;margin-top:2px}
 .rate-group{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .rate-cell{background:#080f1e;border-radius:6px;padding:8px 10px}
-.rate-cell-label{font-size:10px;color:#475569;margin-bottom:3px;line-height:1.3}
-.rate-val{font-size:13px;font-weight:700;color:#7dd3fc}
-.rate-val.var{color:#6ee7b7}
-.rate-val.refi{color:#c4b5fd}
+.rate-cell-label{font-size:11px;color:#64748b;margin-bottom:3px;line-height:1.3}
+.rate-val{font-size:13px;font-weight:700;color:#93c5fd}
+.rate-val.var{color:#86efac}
+.rate-val.refi{color:#d8b4fe}
 .rate-val.empty{color:#1e293b;font-size:11px}
 .rate-cell.best{border:1px solid #451a03}
 .rate-cell.best .rate-val{color:#fbbf24}
-.section-divider{grid-column:1/-1;font-size:10px;color:#334155;text-transform:uppercase;letter-spacing:.08em;padding:6px 0 2px;border-top:1px solid #1e293b;margin-top:2px}
+.section-divider{grid-column:1/-1;font-size:10px;color:#475569;text-transform:uppercase;letter-spacing:.08em;padding:6px 0 2px;border-top:1px solid #1e293b;margin-top:2px}
 .footer{padding:10px 16px;border-top:1px solid #1e293b;font-size:11px;color:#334155;display:flex;justify-content:space-between;align-items:center}
 .refresh-btn{font-size:11px;padding:4px 12px;border-radius:4px;border:1px solid #1e293b;background:transparent;color:#64748b;cursor:pointer}
 .refresh-btn:hover{border-color:#2563eb;color:#7dd3fc}
@@ -208,6 +209,7 @@ var NBC_CELLS = [
   {key:"5yr Var - Unins (25yr)",   col:"5yr Var - Uninsured",   term:"5yr",type:"variable",ins:"uninsured",label:"5yr Var — Uninsured",   cls:"var"},
   {key:"4yr Fixed - Insured",      col:"4yr Fixed - Insured",   term:"4yr",type:"fixed",   ins:"insured",  label:"4yr Fixed — Insured",   cls:"",     div:"4-Year Fixed"},
   {key:"4yr Fixed - Uninsured",    col:"4yr Fixed - Uninsured", term:"4yr",type:"fixed",   ins:"uninsured",label:"4yr Fixed — Uninsured", cls:""},
+  {key:"4yr Fixed - Refi",         col:"4yr Fixed - Refi",      term:"4yr",type:"fixed",   ins:"refi",     label:"4yr Fixed — Refinance", cls:"refi"},
   {key:"3yr Fixed - Insured",      col:"3yr Fixed - Insured",   term:"3yr",type:"fixed",   ins:"insured",  label:"3yr Fixed — Insured",   cls:"",     div:"3-Year Fixed"},
   {key:"3yr Fixed - Unins+Refi",   col:"3yr Fixed - Uninsured", term:"3yr",type:"fixed",   ins:"refi",     label:"3yr Fixed — Uninsured", cls:"refi"}
 ];
@@ -397,11 +399,13 @@ function parseLenderIQCSV(text) {
     if (!lender || lender === "Lender") continue;
     if (/low feature|regional lenders/i.test(lender)) continue;
     var grp = LIQ_GROUPS[lender] || "lenderiq-national";
+    var logo = r[col("Logo")] || "";
     var obj = {
       lender: lender,
       date:   r[col("Parsed At")] || "",
       group:  grp,
-      prime:  4.45
+      prime:  4.45,
+      logo:   logo
     };
     // Map standard RATE_CELLS keys to LenderIQ sheet column names
     var liqMap = {
@@ -430,7 +434,6 @@ function parseLenderIQCSV(text) {
     }
     rows.push(obj);
   }
-  console.log("LenderIQ rows parsed:", rows.length, rows[0] ? rows[0].lender : "none");
   return rows;
 }
 
@@ -514,6 +517,8 @@ function parseB2BCSV(text) {
   var mapping = [
     { key: "5yr Fixed - Insured",      fixed: "5 Year Closed", type: "Insured" },
     { key: "5yr Fixed - Unins (25yr)", fixed: "5 Year Closed", type: "Conventional" },
+    { key: "4yr Fixed - Insured",      fixed: "4 Year Closed", type: "Insured" },
+    { key: "4yr Fixed - Uninsured",    fixed: "4 Year Closed", type: "Conventional" },
     { key: "3yr Fixed - Insured",      fixed: "3 Year Closed", type: "Insured" },
     { key: "3yr Fixed - Unins+Refi",   fixed: "3 Year Closed", type: "Conventional" },
     { key: "5yr Var - Insured",        var: "5 Year VRM (Insured)" },
@@ -544,8 +549,64 @@ function parseB2BCSV(text) {
   var rows = [];
   rows.push(buildLender("B2B Bank (PMPP)", "pmpp"));
   rows.push(buildLender("B2B Bank (Standard)", "standard"));
-  console.log("B2B rows parsed:", rows.length, "5yr Fix Ins PMPP:", rows[0]["5yr Fixed - Insured"], "Std:", rows[1]["5yr Fixed - Insured"]);
   return rows;
+}
+
+// ── Logo matching ────────────────────────────────────────────────────────────
+// Name aliases: non-LIQ lender name → LIQ lender name
+var LOGO_ALIASES = {
+  "BMO":                      "Bank of Montreal",
+  "TD Bank":                  "TD Canada Trust",
+  "Lendwise/Merix":           "MERIX - Standard (Lendwise)",
+  "CMLS (Rate Advantage)":    "CMLS Financial",
+  "First Nat (Rate Option +)":"First National Financial",
+  "RMG (Low Rate Basic)":     "RMG Mortgages"
+};
+
+function applyLogos(lenderiqRows) {
+  // Build logo lookup from LenderIQ data
+  var logoMap = {};
+  lenderiqRows.forEach(function(l) { if (l.logo) logoMap[l.lender] = l.logo; });
+
+  allData.forEach(function(l) {
+    if (l.logo) return; // already has a logo
+
+    // 1. Exact match
+    if (logoMap[l.lender]) { l.logo = logoMap[l.lender]; return; }
+
+    // 2. Alias match
+    var alias = LOGO_ALIASES[l.lender];
+    if (alias && logoMap[alias]) { l.logo = logoMap[alias]; return; }
+
+    // 3. Partial match: lender name appears in a LIQ name or vice versa
+    var nameLower = l.lender.toLowerCase();
+    for (var key in logoMap) {
+      var keyLower = key.toLowerCase();
+      if (keyLower.indexOf(nameLower) >= 0 || nameLower.indexOf(keyLower) >= 0) {
+        l.logo = logoMap[key]; return;
+      }
+    }
+  });
+}
+
+// Refi = Uninsurable: fill gaps between paired rate cells
+var REFI_UNINS_PAIRS = [
+  ["5yr Fixed - Unins (25yr)", "5yr Fixed - Refi (25yr)"],
+  ["5yr Var - Unins (25yr)",   "5yr Var - Refi (25yr)"],
+  ["4yr Fixed - Uninsured",    "4yr Fixed - Refi"],
+  ["3yr Fixed - Unins+Refi",   "3yr Fixed - Unins+Refi"]  // already combined, skip
+];
+
+function fillRefiUnins() {
+  allData.forEach(function(l) {
+    for (var i = 0; i < REFI_UNINS_PAIRS.length; i++) {
+      var unins = REFI_UNINS_PAIRS[i][0];
+      var refi  = REFI_UNINS_PAIRS[i][1];
+      if (unins === refi) continue;
+      if (l[unins] && !l[refi])  l[refi]  = l[unins];
+      if (l[refi]  && !l[unins]) l[unins] = l[refi];
+    }
+  });
 }
 
 // ── Fetch ─────────────────────────────────────────────────────────────────────
@@ -562,6 +623,8 @@ function loadData() {
       var lenderiq = parseLenderIQCSV(texts[3]);
       var b2b      = parseB2BCSV(texts[4]);
       allData      = main.concat(promo).concat(nbc).concat(lenderiq).concat(b2b);
+      applyLogos(lenderiq);
+      fillRefiUnins();
       buildLenderPicker();
       setStatus("ok", "Live — " + allData.length + " lenders — " + new Date().toLocaleTimeString());
       renderAll();
@@ -735,7 +798,7 @@ function renderGrid(lenders) {
 
     html += '<div class="lender-card">' +
       '<div class="lender-header"><div>' +
-        '<div class="lender-name">' + l.lender + '</div>' +
+        '<div class="lender-name">' + (l.logo ? '<img class="lender-logo" src="' + l.logo + '" alt="">' : '') + l.lender + '</div>' +
         '<div class="lender-sub">Updated ' + l.date + ' &bull; Prime ' + l.prime + '%' + (l.note ? ' &bull; ' + l.note : '') + '</div>' +
       '</div>' +
       (isBestCard ? '<span style="font-size:10px;padding:2px 8px;border-radius:3px;background:#451a03;color:#fbbf24">&#9733; Best</span>' : '') +
