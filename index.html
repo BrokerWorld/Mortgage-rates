@@ -173,6 +173,7 @@ var CSV_MAIN     = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/expo
 var CSV_PROMO    = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/export?format=csv&gid=1193463627";
 var CSV_NBC      = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/export?format=csv&gid=2014516855";
 var CSV_LENDERIQ = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/export?format=csv&gid=813287123";
+var CSV_B2B      = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/export?format=csv&gid=1430504948";
 
 var GROUPS = {
   "ATB":"regional","Desjardins":"regional","DUCA":"regional","Tru Cooperative Bank":"regional",
@@ -180,7 +181,9 @@ var GROUPS = {
   "MCAP (Value-Flex)":"nofrills","RMG (Low Rate Basic)":"nofrills",
   "RFA (Promo)":"promo",
   "National Bank (Purchase Without Cashback or External Refinancing)":"promo",
-  "National Bank (Purchase With Cashback)":"promo"
+  "National Bank (Purchase With Cashback)":"promo",
+  "B2B Bank (PMPP)":"national",
+  "B2B Bank (Standard)":"national"
 };
 
 // Standard rate cells (main + promo sheets)
@@ -465,10 +468,90 @@ function parseNBCCSV(text) {
   return rows;
 }
 
+function parseB2BCSV(text) {
+  var lines = text.trim().split("\n").map(parseLine);
+  // Row 0 = metadata: Last updated, Effective, Prime%, Bulletin, ...
+  var meta = lines[0] || [];
+  var effDate = "";
+  var prime = 4.45;
+  for (var i = 0; i < meta.length; i++) {
+    var m;
+    if ((m = meta[i].match(/Effective:\s*(.+)/))) effDate = m[1].trim();
+    if ((m = meta[i].match(/Prime:\s*([\d.]+)/))) prime = parseFloat(m[1]);
+  }
+
+  // Walk rows to build rate lookup: b2b[term_or_product][type] = {pmpp, standard}
+  var fixed = {};    // e.g. fixed["5 Year Closed"]["Insured"] = {pmpp:"3.99%", standard:"4.14%"}
+  var variable = {}; // e.g. variable["5 Year Variable - Insured"] = {pmpp:"...", standard:"..."}
+  var section = "";
+
+  for (var i = 1; i < lines.length; i++) {
+    var r = lines[i];
+    var r0 = (r[0] || "").trim();
+    var r0l = r0.toLowerCase();
+
+    // Detect section headers
+    if (r0l.indexOf("fixed rate") >= 0 && r0l.indexOf("variable") < 0) { section = "fixed"; continue; }
+    if (r0l === "variable rate & heloc") { section = "variable"; continue; }
+    if (r0l.indexOf("new construction") >= 0) { section = "nc"; continue; }
+    // Skip sub-headers
+    if (r0 === "Term" || r0 === "Product" || !r0) continue;
+
+    if (section === "fixed" && r.length >= 4) {
+      var term = r0;
+      var type = (r[1] || "").trim();
+      if (!type) continue;
+      if (!fixed[term]) fixed[term] = {};
+      fixed[term][type] = { pmpp: (r[2]||"").trim(), standard: (r[3]||"").trim() };
+    }
+    else if (section === "variable" && r.length >= 4) {
+      var product = r0;
+      variable[product] = { pmpp: (r[2]||"").trim(), standard: (r[3]||"").trim() };
+    }
+  }
+
+  // Map to standard RATE_CELLS keys for PMPP and Standard tiers
+  var mapping = [
+    { key: "5yr Fixed - Insured",      fixed: "5 Year Closed", type: "Insured" },
+    { key: "5yr Fixed - Unins (25yr)", fixed: "5 Year Closed", type: "Conventional" },
+    { key: "3yr Fixed - Insured",      fixed: "3 Year Closed", type: "Insured" },
+    { key: "3yr Fixed - Unins+Refi",   fixed: "3 Year Closed", type: "Conventional" },
+    { key: "5yr Var - Insured",        var: "5 Year VRM (Insured)" },
+    { key: "5yr Var - Unins (25yr)",   var: "5 Year VRM (Conventional)" },
+  ];
+
+  function buildLender(name, tier) {
+    var obj = {
+      lender: name,
+      date: effDate,
+      group: GROUPS[name] || "national",
+      prime: prime
+    };
+    for (var j = 0; j < RATE_CELLS.length; j++) obj[RATE_CELLS[j].key] = "";
+    for (var j = 0; j < mapping.length; j++) {
+      var m = mapping[j];
+      var val = "";
+      if (m.fixed && fixed[m.fixed] && fixed[m.fixed][m.type]) {
+        val = fixed[m.fixed][m.type][tier] || "";
+      } else if (m["var"] && variable[m["var"]]) {
+        val = variable[m["var"]][tier] || "";
+      }
+      if (isRate(val)) obj[m.key] = val;
+    }
+    return obj;
+  }
+
+  var rows = [];
+  rows.push(buildLender("B2B Bank (PMPP)", "pmpp"));
+  rows.push(buildLender("B2B Bank (Standard)", "standard"));
+  console.log("B2B rows parsed:", rows.length, "5yr Fix Ins PMPP:", rows[0]["5yr Fixed - Insured"], "Std:", rows[1]["5yr Fixed - Insured"]);
+  return rows;
+}
+
 // ── Fetch ─────────────────────────────────────────────────────────────────────
 function loadData() {
   setStatus("loading", "Loading live rates...");
-  Promise.all([fetch(CSV_MAIN), fetch(CSV_PROMO), fetch(CSV_NBC), fetch(CSV_LENDERIQ)])
+  Promise.all([fetch(CSV_MAIN), fetch(CSV_PROMO), fetch(CSV_NBC), fetch(CSV_LENDERIQ), fetch(CSV_B2B)])
     .then(function(responses) {
       return Promise.all(responses.map(function(r) { return r.text(); }));
     })
@@ -477,7 +560,8 @@ function loadData() {
       var promo    = parsePromoCSV(texts[1]);
       var nbc      = parseNBCCSV(texts[2]);
       var lenderiq = parseLenderIQCSV(texts[3]);
-      allData      = main.concat(promo).concat(nbc).concat(lenderiq);
+      var b2b      = parseB2BCSV(texts[4]);
+      allData      = main.concat(promo).concat(nbc).concat(lenderiq).concat(b2b);
       buildLenderPicker();
       setStatus("ok", "Live — " + allData.length + " lenders — " + new Date().toLocaleTimeString());
       renderAll();
