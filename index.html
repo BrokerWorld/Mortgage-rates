@@ -128,6 +128,7 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#0f172a;color:#e2
     <div class="filter-row">
       <button class="pill active" onclick="setFilter('ins','all',this)">All</button>
       <button class="pill" onclick="setFilter('ins','insured',this)">Insured</button>
+      <button class="pill" onclick="setFilter('ins','insurable',this)">Insurable</button>
       <button class="pill" onclick="setFilter('ins','uninsured',this)">Uninsured</button>
       <button class="pill" onclick="setFilter('ins','refi',this)">Refinance</button>
       <button class="pill" onclick="setFilter('ins','rentals',this)">Rentals</button>
@@ -190,6 +191,7 @@ var GROUPS = {
 // Standard rate cells (main + promo sheets)
 var RATE_CELLS = [
   {key:"5yr Fixed - Insured",      pkey:"5yr Fixed - Insured",   term:"5yr",type:"fixed",   ins:"insured",  label:"5yr Fixed — Insured",     cls:""},
+  {key:"5yr Fixed - Insurable <65%",pkey:"",                     term:"5yr",type:"fixed",   ins:"insurable",label:"5yr Fixed — Insurable <65%",cls:""},
   {key:"5yr Fixed - Unins (25yr)", pkey:"5yr Fixed - Unins",     term:"5yr",type:"fixed",   ins:"uninsured",label:"5yr Fixed — Uninsured",   cls:""},
   {key:"5yr Fixed - Refi (25yr)",  pkey:"",                      term:"5yr",type:"fixed",   ins:"refi",     label:"5yr Fixed — Refi (25yr)", cls:"refi"},
   {key:"5yr Fixed - Rentals",      pkey:"5yr Fixed - Rentals",   term:"5yr",type:"fixed",   ins:"rentals",  label:"5yr Fixed — Rentals",     cls:"refi"},
@@ -409,7 +411,8 @@ function parseLenderIQCSV(text) {
     };
     // Map standard RATE_CELLS keys to LenderIQ sheet column names
     var liqMap = {
-      "5yr Fixed - Insured":      "5yr Fixed - Insured",
+      "5yr Fixed - Insured":       "5yr Fixed - Insured",
+      "5yr Fixed - Insurable <65%":"5yr Fixed - Insurable <65%",
       "5yr Fixed - Unins (25yr)": "5yr Fixed - Uninsured",
       "5yr Fixed - Refi (25yr)":  "5yr Fixed - Refi",
       "5yr Fixed - Rentals":      "5yr Fixed - Rental",
